@@ -4,7 +4,7 @@
 
 - **RN02:** Una venta puede contener uno o varios productos, y un producto puede estar incluido en varias ventas.
 
--**RN03:** Cada celular y accesorio debe contener un precio, descripción, cantidad de stock disponible.
+- **RN03:** Cada celular y accesorio debe contener un precio, descripción, cantidad de stock disponible.
 
 - **RN04:** Un cliente puede ingresar uno o varios productos al servicio técnico, y cada servicio técnico debe quedar asociado a un cliente correspondiente con su estado.
 
