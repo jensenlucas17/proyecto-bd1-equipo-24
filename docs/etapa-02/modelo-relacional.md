@@ -1,10 +1,15 @@
+CREATE TABLE LOCALIDAD (
+  CP          VARCHAR(10)   PRIMARY KEY,
+  provincia   VARCHAR(50)   NOT NULL,
+  ciudad      VARCHAR(50)   NOT NULL
+);
+
 CREATE TABLE Direccion (
-  codigo_direccion INT PRIMARY KEY,
-  calle VARCHAR(100) NOT NULL,
-  altura INT NOT NULL,
-  CP VARCHAR(10) NOT NULL,
-  provincia VARCHAR(50) NOT NULL,
-  ciudad VARCHAR(50) NOT NULL
+  codigo_direccion INT           PRIMARY KEY,
+  calle            VARCHAR(100)  NOT NULL,
+  altura           INT           NOT NULL,
+  CP               VARCHAR(10)   NOT NULL,
+  FOREIGN KEY (CP) REFERENCES LOCALIDAD(CP)
 );
 
 CREATE TABLE CLIENTE (
