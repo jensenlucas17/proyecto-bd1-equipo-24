@@ -28,25 +28,63 @@ Se dotó a cada tabla de una **Clave Primaria (PK)** para garantizar que no exis
 ---
 
 # NORMALIZACION 2FN
-Establece que además de cumplir con la primera forma normal, todo atributo no clave debe depender de la clave primaria completa, no de una parte de ella. Esto solo aplica cuando la clave primaria es compuesta.
 
-En nuestro caso se identifican dos tablas que contienen claves compuestas, que son, `CONTIENE` y `ABASTECE`.
+Una relación está en **Segunda Forma Normal (2FN)** si está en 1FN y todo atributo no clave depende funcionalmente de la clave primaria **completa**, no de una parte de ella. Como una dependencia parcial solo puede existir cuando la clave es compuesta, el análisis se concentra en las tablas con PK compuesta: `CONTIENE` y `ABASTECE`.
 
-En `CONTIENE`, tanto cantidad como precio_unitario_historico dependen de la combinación completa (`cod_producto`, `nro_venta`): la cantidad vendida y el precio aplicado son propios de esa línea de esa venta, no de un producto en abstracto ni de una venta en abstracto por separado.
+### `CONTIENE` (PK: `nro_venta`, `cod_producto`)
 
-Por su parte `ABASTECE` no tiene atributos no clave, por lo que no hay nada que pueda depender parcialmente de la clave.
+Dependencias funcionales:
 
-Todas las demás tablas tienen clave primaria simple, así que 2FN se cumple automáticamente en ellas.
+- (`nro_venta`, `cod_producto`) → `cantidad`: la cantidad vendida es propia de ese producto en esa venta.
+- (`nro_venta`, `cod_producto`) → `precio_unitario`: el precio pactado es propio de ese producto en esa venta (ver RN06).
+
+Ningún atributo depende solo de `nro_venta` ni solo de `cod_producto`, por lo que **no hay dependencias parciales**.
+
+**Corrección aplicada: eliminación de `monto`.** Una versión previa del modelo incluía un campo `monto` en el detalle. Se eliminó porque es un atributo **derivado** (`monto = cantidad × precio_unitario`): almacenarlo genera redundancia y riesgo de inconsistencia (si cambia la cantidad y no el monto, la base se contradice). En su lugar se conservan únicamente `cantidad` y `precio_unitario`, y el subtotal de cada renglón y el total de la venta se obtienen por consulta (`SUM(cantidad * precio_unitario)`).
+
+`precio_unitario` no es redundante respecto de `PRODUCTO.precio_actual`: son dos hechos distintos (el precio vigente hoy vs. el precio al que se vendió), y conservarlo evita cambios retroactivos en el historial de ventas.
+
+### `ABASTECE` (PK: `cod_producto`, `cuit_proveedor`)
+
+No tiene atributos no clave, por lo que no hay nada que pueda depender parcialmente de la clave.
+
+### Resto de las tablas
+
+Todas las demás tienen clave primaria simple, por lo que cumplen la 2FN automáticamente.
+
+**Resultado:** el esquema cumple la 2FN.
 
 ---
 
 # NORMALIZACION 3FN
-Se revisó cada tabla buscando atributos no clave que dependieran de otro atributo no clave en vez de depender directamente de la clave:
 
-En `CLIENTE`, `calle` y `altura` dependen directamente de `dni_cliente`; no hay dependencia entre ellos (conocer la calle no determina la altura).
+Una relación está en **Tercera Forma Normal (3FN)** si está en 2FN y no existen **dependencias transitivas**: ningún atributo no clave depende de otro atributo no clave (X → Y → Z, con Y no clave). Se revisó cada tabla y se detectaron tres situaciones, ya corregidas en el modelo relacional:
 
-En `PRODUCTO`, `descripcion`, `tipo`, `precio_actual` y `stock_actual` dependen todos directamente de `cod_producto`.
+### 1. `DIRECCION` y `LOCALIDAD`: dependencia transitiva por el código postal
 
-En `SERVICIO_TECNICO`, tanto `Fecha_ingreso` como `Fecha_entrega` quedaron como atributos propios de la orden de servicio (no del equipo), dependiendo directamente de `nro_orden`.
+En `DIRECCION`, los atributos `provincia` y `ciudad` dependen del `CP`, y el `CP` (atributo no clave) depende de `codigo_direccion`:
 
-En `DIRECCION`, notamos una dependencia transitiva entre `provincia` y `ciudad` con el `CP`, ya que el `CP` determina a los dos atributos. Por esto se decició crear una tabla localidad que contenga como **Clave Primaria (PK)**  a `CP` y atributos `ciudad` y `provincia`. Y esto relacionarlo con direccion mediante una **Clave Foranea (FK)** .
+`codigo_direccion → CP → (ciudad, provincia)`
+
+Es una dependencia transitiva. Además, repetir ciudad y provincia en cada dirección de una misma localidad genera redundancia y anomalías de actualización.
+
+**Corrección:** se creó la tabla `LOCALIDAD` (PK `CP`; atributos `ciudad` y `provincia`) y `DIRECCION` la referencia mediante la FK `CP`.
+
+### 2. `CLIENTE`: datos de dirección duplicados
+
+`calle` y `altura` ya residen en la tabla independiente `DIRECCION`, por lo que mantenerlos también en `CLIENTE` duplicaba información y creaba la dependencia transitiva `dni_cliente → codigo_direccion → (calle, altura)`.
+
+**Corrección:** se eliminaron `calle` y `altura` de `CLIENTE`, que ahora solo conserva la FK `codigo_direccion`.
+
+### 3. `PRODUCTO`: FK `nro_orden` improcedente
+
+`PRODUCTO` contenía la clave foránea `nro_orden` (perteneciente a `SERVICIO_TECNICO`). El catálogo de artículos no depende de las reparaciones: un producto existe y se vende aunque nunca sea reparado, y el servicio técnico se vincula con `EQUIPO` y, a través de él, con `CLIENTE`.
+
+**Corrección:** se eliminó `nro_orden` de `PRODUCTO`.
+
+### Revisión del resto de las tablas
+
+- `PRODUCTO`: `descripcion`, `tipo`, `precio_actual` y `stock_actual` dependen directamente de `cod_producto`.
+- `SERVICIO_TECNICO`: `falla_reportada`, `precio_arreglo`, `fecha_ingreso` y `fecha_entrega` son propios de la orden y dependen de `nro_orden`.
+- `VENTA`: `fecha_hora`, `metodo_pago`, `canal_venta` y las FK dependen de `nro_venta`.
+- `ENVIO`, `PROVEEDOR`, `EQUIPO`, `CONTIENE` y `ABASTECE`: sin dependencias transitivas.

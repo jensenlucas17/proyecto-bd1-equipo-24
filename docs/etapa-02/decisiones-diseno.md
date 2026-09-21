@@ -48,7 +48,3 @@ Este documento justifica las decisiones estructurales tomadas al pasar del DER a
 **Decisión.** Se eliminó la FK `nro_orden` de `PRODUCTO`.
 
 **Justificación.** El catálogo (celulares y accesorios a la venta) no depende de las reparaciones. El servicio técnico se vincula con `EQUIPO` y `CLIENTE` (RN04, RN10), no con `PRODUCTO`.
-
-## Nota de consistencia con la Etapa 1
-
-Los documentos de la Etapa 1 describen `Detalle_Venta` con los atributos `monto` y `monto_historico`. En el modelo relacional esa tabla pasa a llamarse `CONTIENE` y esos atributos se reemplazan por `precio_unitario` (más `cantidad`). El sentido de RN06 se mantiene; solo cambió su representación.
