@@ -55,3 +55,9 @@ Este documento justifica las decisiones estructurales tomadas al pasar del DER a
 
 **Justificación.**
 * **1FN:** Descompone el número telefónico en unidades atómicas (código de área y número local), evitando cadenas heterogéneas que dificulten validaciones de discado, filtrado por región o mensajería automatizada.
+
+## 7. Claves alternativas('ENVIO')
+**Decisión.** En la tabla `ENVIO`, se adopta `cod_seguimiento` como Clave Primaria (PK) y se define `id_envio` como clave candidata alternativa (`UNIQUE NOT NULL`).
+
+**Justificación.**
+* `cod_seguimiento` es el identificador operacional real utilizado tanto por el cliente como por las plataformas de logística externa para consultar el estado del paquete.
