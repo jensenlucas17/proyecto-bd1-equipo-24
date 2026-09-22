@@ -49,6 +49,7 @@ CREATE TABLE PRODUCTO (
 
 CREATE TABLE ENVIO (
   cod_seguimiento VARCHAR(50) PRIMARY KEY,
+  id_envio VARCHAR(20) NOT NULL,
   direccion_origen INT NOT NULL,
   direccion_envio INT NOT NULL,
   estado_envio VARCHAR(30) NOT NULL,
