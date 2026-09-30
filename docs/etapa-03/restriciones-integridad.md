@@ -49,14 +49,6 @@ actualización o dejar direcciones con un CP inexistente.
 mientras exista un cliente que la esté usando, para no dejar clientes con una
 referencia inválida ni perder trazabilidad de domicilios históricos.
 
-> **Nota:** en esta versión del script, `telefono` volvió a modelarse como un
-> atributo simple de texto dentro de `CLIENTE`, en lugar de la entidad `Telefono`
-> propuesta en la etapa de normalización (`docs/etapa-02/normalizacion.md`). Vale
-> la pena revisar si esto fue una decisión deliberada de simplificación para la
-> implementación física, o si se perdió esa descomposición al pasar del modelo
-> relacional al DDL — conviene dejarlo explícito en `decisiones-diseno.md` de esta
-> etapa para que quede documentado el motivo.
-
 ---
 
 ## 4. EQUIPO
