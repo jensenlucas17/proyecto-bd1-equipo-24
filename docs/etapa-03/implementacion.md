@@ -147,3 +147,55 @@ CREATE TABLE VENTA (
 );
 
 GO
+
+-- 9. PROVEEDOR
+CREATE TABLE PROVEEDOR (
+    cuit_proveedor   VARCHAR(15)   NOT NULL,
+    nombre           VARCHAR(100)  NOT NULL,
+    telefono         VARCHAR(20)   NOT NULL,
+    email            VARCHAR(100)  NOT NULL,
+    codigo_direccion INT           NOT NULL,
+    CONSTRAINT PK_Proveedor PRIMARY KEY (cuit_proveedor),
+    CONSTRAINT UQ_Proveedor_Email UNIQUE (email),
+    CONSTRAINT FK_Proveedor_Direccion FOREIGN KEY (codigo_direccion)
+        REFERENCES Direccion (codigo_direccion)
+        ON DELETE NO ACTION
+        ON UPDATE NO ACTION
+);
+GO
+
+-- 10. ABASTECE (Tabla intermedia M:N)
+CREATE TABLE ABASTECE (
+    cod_producto   INT          NOT NULL,
+    cuit_proveedor VARCHAR(15)  NOT NULL,
+    CONSTRAINT PK_Abastece PRIMARY KEY (cod_producto, cuit_proveedor),
+    CONSTRAINT FK_Abastece_Producto FOREIGN KEY (cod_producto)
+        REFERENCES PRODUCTO (cod_producto)
+        ON DELETE CASCADE
+        ON UPDATE NO ACTION,
+    CONSTRAINT FK_Abastece_Proveedor FOREIGN KEY (cuit_proveedor)
+        REFERENCES PROVEEDOR (cuit_proveedor)
+        ON DELETE CASCADE
+        ON UPDATE NO ACTION
+);
+GO
+
+-- 11. CONTIENE (Tabla intermedia M:N)
+CREATE TABLE CONTIENE (
+    nro_venta       INT            NOT NULL,
+    cod_producto    INT            NOT NULL,
+    cantidad        INT            NOT NULL,
+    precio_unitario DECIMAL(10,2)  NOT NULL,
+    CONSTRAINT PK_Contiene PRIMARY KEY (nro_venta, cod_producto),
+    CONSTRAINT CK_Contiene_Cantidad CHECK (cantidad > 0),
+    CONSTRAINT CK_Contiene_PrecioUnitario CHECK (precio_unitario >= 0),
+    CONSTRAINT FK_Contiene_Venta FOREIGN KEY (nro_venta)
+        REFERENCES VENTA (nro_venta)
+        ON DELETE CASCADE
+        ON UPDATE NO ACTION,
+    CONSTRAINT FK_Contiene_Producto FOREIGN KEY (cod_producto)
+        REFERENCES PRODUCTO (cod_producto)
+        ON DELETE NO ACTION
+        ON UPDATE NO ACTION
+);
+GO
