@@ -69,5 +69,81 @@ CREATE TABLE EQUIPO (
         ON DELETE NO ACTION
         ON UPDATE NO ACTION
 );
+
 GO
 
+-- 5. SERVICIO_TECNICO
+CREATE TABLE SERVICIO_TECNICO (
+    nro_orden       INT            IDENTITY(1,1) NOT NULL,
+    falla_reportada VARCHAR(255)   NOT NULL,
+    precio_arreglo  DECIMAL(10,2)  NOT NULL,
+    fecha_ingreso   DATETIME       NOT NULL DEFAULT GETDATE(), -- Registra la fecha/hora actual por defecto
+    fecha_entrega   DATETIME       NULL,     -- Permite valores nulos para órdenes en proceso
+    id_equipo       INT            NOT NULL,
+    CONSTRAINT PK_ServicioTecnico PRIMARY KEY (nro_orden),
+    CONSTRAINT CK_ServicioTecnico_Precio CHECK (precio_arreglo >= 0),
+    CONSTRAINT CK_ServicioTecnico_Fechas CHECK (fecha_entrega IS NULL OR fecha_entrega >= fecha_ingreso),
+    CONSTRAINT FK_ServicioTecnico_Equipo FOREIGN KEY (id_equipo)
+        REFERENCES EQUIPO (id_equipo)
+        ON DELETE NO ACTION
+        ON UPDATE NO ACTION
+);
+
+GO
+
+-- 6. PRODUCTO
+CREATE TABLE PRODUCTO (
+    cod_producto  INT            IDENTITY(1,1) NOT NULL,
+    descripcion   VARCHAR(150)   NOT NULL,
+    tipo          VARCHAR(50)    NOT NULL,
+    stock_actual  INT            NOT NULL,
+    precio_actual DECIMAL(10,2)  NOT NULL,
+    CONSTRAINT PK_Producto PRIMARY KEY (cod_producto),
+    CONSTRAINT CK_Producto_Stock CHECK (stock_actual >= 0),
+    CONSTRAINT CK_Producto_Precio CHECK (precio_actual >= 0)
+);
+
+GO
+
+-- 7. ENVIO
+CREATE TABLE ENVIO (
+    cod_seguimiento  VARCHAR(50)  NOT NULL,
+    id_envio         VARCHAR(20)  NOT NULL,
+    direccion_origen INT          NOT NULL,
+    direccion_envio  INT          NOT NULL,
+    estado_envio     VARCHAR(30)  NOT NULL,
+    CONSTRAINT PK_Envio PRIMARY KEY (cod_seguimiento),
+    CONSTRAINT UQ_Envio_IdEnvio UNIQUE (id_envio),
+    CONSTRAINT CK_Envio_Estado CHECK (estado_envio IN ('Pendiente', 'En Transito', 'Entregado', 'Cancelado')),
+    CONSTRAINT FK_Envio_DireccionOrigen FOREIGN KEY (direccion_origen)
+        REFERENCES Direccion (codigo_direccion)
+        ON DELETE NO ACTION
+        ON UPDATE NO ACTION,
+    CONSTRAINT FK_Envio_DireccionDestino FOREIGN KEY (direccion_envio)
+        REFERENCES Direccion (codigo_direccion)
+        ON DELETE NO ACTION
+        ON UPDATE NO ACTION
+);
+
+GO
+
+-- 8. VENTA
+CREATE TABLE VENTA (
+    nro_venta       INT           IDENTITY(1,1) NOT NULL,
+    fecha_hora      DATETIME      NOT NULL DEFAULT GETDATE(),
+    metodo_pago     VARCHAR(50)   NOT NULL,
+    canal_venta     VARCHAR(50)   NOT NULL,
+    dni_cliente     INT           NOT NULL,
+    cod_seguimiento VARCHAR(50)   NULL,     -- Opcional para ventas presenciales
+    CONSTRAINT PK_Venta PRIMARY KEY (nro_venta),
+    CONSTRAINT FK_Venta_Cliente FOREIGN KEY (dni_cliente)
+        REFERENCES CLIENTE (dni_cliente)
+        ON DELETE NO ACTION
+        ON UPDATE NO ACTION,
+    CONSTRAINT FK_Venta_Envio FOREIGN KEY (cod_seguimiento)
+        REFERENCES ENVIO (cod_seguimiento)
+        ON DELETE SET NULL
+        ON UPDATE NO ACTION
+);
+
+GO
