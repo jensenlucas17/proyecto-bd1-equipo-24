@@ -134,3 +134,72 @@ la referencia al envío, quedando como una venta sin envío asociado.
 cliente asociado (a diferencia del envío, que sí es opcional), por eso aquí no se
 usa `SET NULL` sino que se bloquea el borrado del cliente si tiene ventas
 registradas — esto preserva el historial de ventas.
+
+## 9. PROVEEDOR
+
+| Tipo | Restricción |
+|---|---|
+| Clave primaria | `cuit_proveedor` — clave natural. |
+| Unicidad | `UQ_Proveedor_Email`: `email` único. |
+| Dominio | `nombre`, `telefono`, `email` y `codigo_direccion` obligatorios. |
+| Referencial | `FK_Proveedor_Direccion` → `Direccion(codigo_direccion)`. `ON DELETE NO ACTION` / `ON UPDATE NO ACTION`. |
+
+---
+
+## 10. ABASTECE (tabla intermedia N:M)
+
+| Tipo | Restricción |
+|---|---|
+| Clave primaria | Compuesta: `(cod_producto, cuit_proveedor)`. |
+| Referencial | `FK_Abastece_Producto` → `PRODUCTO(cod_producto)`. `ON DELETE CASCADE` / `ON UPDATE NO ACTION`. |
+| Referencial | `FK_Abastece_Proveedor` → `PROVEEDOR(cuit_proveedor)`. `ON DELETE CASCADE` / `ON UPDATE NO ACTION`. |
+
+**Por qué `CASCADE`:** `ABASTECE` es una tabla puramente asociativa que no tiene
+sentido de existir sin ambos extremos de la relación. Si se elimina un producto o
+un proveedor, las filas de `ABASTECE` que los vinculaban deben eliminarse
+automáticamente, ya que no representan información propia más allá del vínculo
+mismo.
+
+---
+
+## 11. CONTIENE (tabla intermedia N:M — detalle de venta)
+
+| Tipo | Restricción |
+|---|---|
+| Clave primaria | Compuesta: `(nro_venta, cod_producto)`. |
+| Dominio | `cantidad` y `precio_unitario` obligatorios. |
+| Chequeo | `CK_Contiene_Cantidad`: `cantidad > 0` — no se permite registrar una línea de venta con cantidad cero o negativa. |
+| Chequeo | `CK_Contiene_PrecioUnitario`: `precio_unitario >= 0`. |
+| Referencial | `FK_Contiene_Venta` → `VENTA(nro_venta)`. `ON DELETE CASCADE` / `ON UPDATE NO ACTION`. |
+| Referencial | `FK_Contiene_Producto` → `PRODUCTO(cod_producto)`. `ON DELETE NO ACTION` / `ON UPDATE NO ACTION`. |
+
+**Por qué `CASCADE` hacia `VENTA` pero `NO ACTION` hacia `PRODUCTO`:** una línea de
+`CONTIENE` no tiene sentido sin la venta que la contiene, por lo que si se elimina
+la venta, sus líneas de detalle deben eliminarse con ella. En cambio, no se debe
+poder borrar un producto mientras exista al menos una venta histórica que lo
+incluya, porque eso destruiría el historial de ventas — de ahí que hacia
+`PRODUCTO` se use `NO ACTION` en lugar de `CASCADE`.
+
+> Nota de nomenclatura: esta tabla corresponde a lo que en `docs/etapa-02` se
+> documentó como `Detalle_Venta`; en el script DDL se implementó con el nombre
+> `CONTIENE`, y el atributo `monto` de la etapa de modelado pasó a llamarse
+> `precio_unitario`. Conviene unificar el nombre en la documentación de esta etapa
+> para evitar confusiones entre el modelo relacional y la implementación física.
+
+---
+
+## Resumen de políticas de borrado (`ON DELETE`) aplicadas
+
+| Política | Tablas donde se aplica | Justificación |
+|---|---|---|
+| `NO ACTION` | Direccion→Localidad, Cliente→Direccion, Equipo→Cliente, ServicioTecnico→Equipo, Envio→Direccion (x2), Venta→Cliente, Proveedor→Direccion, Contiene→Producto | Preserva historial; el "dueño" de la relación no debe desaparecer mientras existan registros dependientes. |
+| `CASCADE` | Abastece→Producto, Abastece→Proveedor, Contiene→Venta | Tablas puramente asociativas o de detalle que no tienen sentido sin su "dueño" directo. |
+| `SET NULL` | Venta→Envio | Relación opcional (FK nullable); el borrado del envío no debe afectar la existencia de la venta. |
+
+## Resumen de políticas de actualización (`ON UPDATE`) aplicadas
+
+Se aplica `NO ACTION` en todas las claves foráneas, excepto `Direccion→Localidad`,
+donde se usa `CASCADE`. El criterio general es que las claves subrogadas
+(`IDENTITY`) no deberían cambiar nunca una vez generadas, por lo que propagar
+actualizaciones no tiene sentido práctico; la única excepción es `CP`, por tratarse
+de una clave natural potencialmente sujeta a corrección administrativa.
