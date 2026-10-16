@@ -89,3 +89,37 @@ Para `@mes = 9` y `@anio = 2026` (Septiembre 2026), según los datos de prueba i
 Ejecutar la consulta cambiando los valores de las variables `@mes` y `@anio`. La suma de la "Facturación Total" de ambas categorías ($3.643.500) debe coincidir matemáticamente con la suma de los totales de todas las ventas registradas en ese mes específico.
 
 ---
+
+### Consulta 3: Detección de clientes frecuentes para envio de cupón de descuento
+**Script:** `sql/consultas/consulta_avanzada.sql`
+
+**Necesidad de información**
+El área de marketing requiere identificar a los clientes que hayan comprado más de $100.000 en total durante un mismo mes. El objetivo es enviarles un cupón de descuento por mensaje de texto. El listado debe incluir el DNI, nombre, apellido, número de teléfono y el importe total gastado en el período.
+
+**Estrategia SQL**
+La consulta recibe el mes y el año (`@mes`, `@anio`) y combina tres tablas mediante `INNER JOIN`:
+
+| Tabla | Aporta | Se une por |
+| --- | --- | --- |
+| `CLIENTE` | DNI, nombre, apellido y teléfono | tabla base |
+| `VENTA` | Filtro de fecha para acotar las compras | `dni_cliente` |
+| `CONTIENE` | Cantidad y precio para calcular el gasto | `nro_venta` |
+
+**Decisiones de diseño de la consulta:**
+- Como un cliente puede tener múltiples ventas en el mes (ej. Guido Casado tiene la venta 1 y la 3), se agrupan los resultados usando `GROUP BY` sobre todos los datos identificatorios del cliente.
+- El cálculo del gasto mensual unificado se realiza con `SUM(CO.cantidad * CO.precio_unitario)`.
+- El requerimiento de superar los $100.000 no se puede evaluar en el `WHERE` porque es un cálculo agregado. Por lo tanto, se aplica un filtro posterior mediante la cláusula `HAVING SUM(CO.cantidad * CO.precio_unitario) > 100000`.
+- Los clientes que compraron menos de ese monto quedan excluidos automáticamente del listado.
+
+**Resultado esperado**
+Para `@mes = 9` y `@anio = 2026` (Septiembre 2026), clientes con gastos superiores a $100.000:
+
+| DNI | Nombre y Apellido | Teléfono | Total Gastado en el Mes |
+| --- | --- | --- | --- |
+| 43999888 | Virginia Gomez | 1149998888 | $ 1.215.000,00 |
+| 42333222 | Lucas Jensen | 3794333222 | $ 890.000,00 |
+| 40123456 | Guido Casado | 3794123456 | $ 885.500,00 |
+| 39876543 | Santiago Lencinas | 3794987654 | $ 468.000,00 |
+
+**Cómo verificarlo**
+Revisar que la salida no devuelva ningún registro cuyo `Total Gastado en el Mes` sea menor o igual a 100.000. Además, comprobar visualmente que clientes con múltiples compras en el mes (como Guido Casado, que gastó $860.000 en la venta 1 y $25.500 en la venta 3) aparezcan en una única fila unificada con la suma total.
