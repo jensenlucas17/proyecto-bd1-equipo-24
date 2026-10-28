@@ -71,3 +71,46 @@ En el esquema relacional de **Nexus Mobile**, el proceso de facturación y fidel
   7. Devuelve el resumen del comprobante generado.
 
 ---
+
+## Resultados obtenidos en la demostración
+
+Al ejecutar los scripts de prueba ubicados en `sql/tecnico/funciones/` y `sql/tecnico/procedimientos/` sobre el lote de datos de prueba (`datos_prueba.sql`), se obtuvieron los siguientes resultados:
+
+### 5.1. Demostración de la Función (`dbo.fn_CalcularDescuentoCliente`)
+
+La consulta evalúa el padrón completo de clientes de Nexus Mobile y asigna el porcentaje de beneficio correspondiente:
+
+| dni_cliente | cliente | monto_acumulado_historico | porcentaje_descuento |
+| :--- | :--- | :--- | :--- |
+| `39876543` | Santiago Romero | `1215000.00` | `10.00` |
+| `42333222` | Lucas Jensen | `890000.00` | `10.00` |
+| `40123456` | Guido Casado | `860000.00` | `10.00` |
+| `41555666` | Emily Scher | `468000.00` | `5.00` |
+| `38111222` | Federico Gonzalez | `95000.00` | `0.00` |
+| `43999888` | Lionel Messi | `50000.00` | `0.00` |
+| `35444777` | Juan Foyth | `40000.00` | `0.00` |
+| `37666555` | Cristian Romero | `25500.00` | `0.00` |
+
+### 5.2. Demostración del Procedimiento (`dbo.sp_RegistrarVentaCompleta`)
+
+Se prueba la venta de **2 unidades** del producto `cod_producto = 7` (*Auriculares Inalambricos Navy Blue*) al cliente `40123456` (*Guido Casado*, quien posee un $10\%$ de descuento por superar los $\$500.000$ acumulados).
+
+**1. Estado del producto antes de la ejecución:**
+
+| cod_producto | descripcion | stock_actual | precio_actual |
+| :--- | :--- | :--- | :--- |
+| `7` | Auriculares Inalambricos Navy Blue | `30` | `40000.00` |
+
+**2. Comprobante devuelto al ejecutar `EXEC dbo.sp_RegistrarVentaCompleta`:**
+
+| nro_venta_generada | dni_cliente | cod_producto | cantidad_vendida | precio_lista_catalogo | descuento_pct | precio_unitario_historico | total_operacion |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `9` | `40123456` | `7` | `2` | `40000.00` | `10.00` | `36000.00` | `72000.00` |
+
+**3. Estado del producto después de la ejecución:**
+
+| cod_producto | descripcion | stock_actual | precio_actual |
+| :--- | :--- | :--- | :--- |
+| `7` | Auriculares Inalambricos Navy Blue | `28` | `40000.00` |
+
+Se verifica que el procedimiento descontó las 2 unidades del inventario centralizado (`30 -> 28`), mantuvo intacto el precio de lista en el catálogo (`$40000.00`) y almacenó en `CONTIENE` el precio histórico con el $10\%$ de descuento aplicado (`$36000.00`).
