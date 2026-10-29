@@ -1,21 +1,26 @@
 /* ============================================================
-   CONSULTA: Reporte Agregado de Ventas en Rango de Fechas
+   CONSULTA 2: Reporte de Rendimiento Mensual de Ventas
    
-   Necesidad: Consolidar el volumen de transacciones (COUNT),
-   las unidades despachadas (SUM) y el total facturado (SUM)
-   agrupado por categoría de producto y por vendedor dentro
-   de un rango de fechas.
+   Necesidad: Evaluar el desempeño de ventas del mes agrupado
+   por categoría de producto (tipo), totalizando operaciones,
+   unidades físicas e ingresos brutos.
 
-   Tablas: VENTA, CONTIENE, PRODUCTO, EMPLEADO (INNER JOIN)
-   Filtros: WHERE (rango temporal)
-   Agrupamiento: GROUP BY + ORDER BY
+   Tablas: VENTA, CONTIENE, PRODUCTO (INNER JOIN)
+   Filtros: WHERE (período mensual parametrizado)
+   Agrupamiento: GROUP BY P.tipo
+   Ordenamiento: ORDER BY [Facturación Total] DESC
    ============================================================ */
 
--- Parámetros de rango de fechas
-DECLARE @fecha_desde DATETIME = '2026-09-01 00:00:00';
-DECLARE @fecha_hasta DATETIME = '2026-09-30 23:59:59';
+-- Parámetros de entrada para el período mensual
+DECLARE @mes  INT = 9;
+DECLARE @anio INT = 2026;
 
--- 1. Totalización agregada por Categoría de Producto
+-- Rango del período: [primer día del mes, primer día del mes siguiente)
+-- Se evita usar MONTH() y YEAR() sobre la columna en el WHERE para
+-- favorecer el uso de índices sobre VENTA.fecha_hora 
+DECLARE @fecha_desde DATETIME = DATEFROMPARTS(@anio, @mes, 1);
+DECLARE @fecha_hasta DATETIME = DATEADD(MONTH, 1, @fecha_desde);
+
 SELECT 
     P.tipo                                          AS [Categoría],
     COUNT(DISTINCT V.nro_venta)                    AS [Total Operaciones],
@@ -26,51 +31,26 @@ INNER JOIN CONTIENE AS CO
     ON V.nro_venta = CO.nro_venta
 INNER JOIN PRODUCTO AS P 
     ON CO.cod_producto = P.cod_producto
-WHERE V.fecha_hora BETWEEN @fecha_desde AND @fecha_hasta
+WHERE V.fecha_hora >= @fecha_desde 
+  AND V.fecha_hora <  @fecha_hasta
 GROUP BY 
     P.tipo
 ORDER BY 
     [Facturación Total] DESC;
 GO
 
--- 2. Totalización agregada por Vendedor / Empleado
-DECLARE @fecha_desde DATETIME = '2026-09-01 00:00:00';
-DECLARE @fecha_hasta DATETIME = '2026-09-30 23:59:59';
+--Verificacion
+DECLARE @mes_a  INT = 9;
+DECLARE @anio_a INT = 2026;
+DECLARE @desde_a DATETIME = DATEFROMPARTS(@anio_a, @mes_a, 1);
+DECLARE @hasta_a DATETIME = DATEADD(MONTH, 1, @desde_a);
 
 SELECT 
-    E.id                                            AS [ID Vendedor],
-    E.nombre_completo                               AS [Vendedor],
-    COUNT(DISTINCT V.nro_venta)                    AS [Ventas Concretadas],
-    SUM(CO.cantidad)                               AS [Unidades Despachadas],
-    SUM(CO.cantidad * CO.precio_unitario)          AS [Facturación Total]
-FROM VENTA AS V
-INNER JOIN EMPLEADO AS E 
-    ON V.id_vendedor = E.id
-INNER JOIN CONTIENE AS CO 
-    ON V.nro_venta = CO.nro_venta
-WHERE V.fecha_hora BETWEEN @fecha_desde AND @fecha_hasta
-GROUP BY 
-    E.id,
-    E.nombre_completo
-ORDER BY 
-    [Facturación Total] DESC;
-GO
-
-/* ============================================================
-   CONSULTA DE VERIFICACIÓN / AUDITORÍA
-   Totalización general de facturación del período para contrastar 
-   que la suma de las categorías y la de los vendedores cuadren 
-   exactamente con el gran total facturado.
-   ============================================================ */
-DECLARE @desde_v DATETIME = '2026-09-01 00:00:00';
-DECLARE @hasta_v DATETIME = '2026-09-30 23:59:59';
-
-SELECT 
-    COUNT(DISTINCT V.nro_venta)           AS [Total Ventas Período],
-    SUM(CO.cantidad)                      AS [Total Unidades Período],
-    SUM(CO.cantidad * CO.precio_unitario) AS [Facturación Total Período]
+    COUNT(DISTINCT V.nro_venta)           AS [Total Ventas Mes],
+    SUM(CO.cantidad)                      AS [Total Unidades Mes],
+    SUM(CO.cantidad * CO.precio_unitario) AS [Total Facturado Mes]
 FROM VENTA AS V
 INNER JOIN CONTIENE AS CO 
     ON V.nro_venta = CO.nro_venta
-WHERE V.fecha_hora BETWEEN @desde_v AND @hasta_v;
-GO
+WHERE V.fecha_hora >= @desde_a 
+  AND V.fecha_hora <  @hasta_a;
