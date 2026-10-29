@@ -118,46 +118,36 @@ El script `sql/tecnico/triggers/triggers.sql` incluye la demostración (sección
 ### 3.2. Cambio de precio de un producto
 `UPDATE dbo.PRODUCTO SET precio_actual = 20000.00 WHERE cod_producto = 102;`
 
+Se consulta la tabla de auditoría y el cambio quedó registrado automáticamente:
+
 | auditoria_id | tipo_operacion | cod_producto | descripcion | precio_anterior | precio_nuevo |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `1` | UPDATE | `102` | Cargador USB-C 25W | `18500.00` | `20000.00` |
 
-### 3.3. Cambio de precio de varios productos en una sola sentencia
-`UPDATE dbo.PRODUCTO SET precio_actual = ROUND(precio_actual * 1.10, 2) WHERE tipo = 'Accesorio';`
-
-El trigger registró **una fila por cada uno de los 3 accesorios** (el producto 103, de tipo Audio, no se modificó y no figura):
-
-| auditoria_id | tipo_operacion | cod_producto | descripcion | precio_anterior | precio_nuevo |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| `2` | UPDATE | `104` | Vidrio templado | `5000.00` | `5500.00` |
-| `3` | UPDATE | `102` | Cargador USB-C 25W | `20000.00` | `22000.00` |
-| `4` | UPDATE | `101` | Funda protectora universal | `8500.00` | `9350.00` |
-
-### 3.4. Cambio de stock solamente (no debe auditarse)
+### 3.3. Cambio de stock solamente (no debe auditarse)
 `UPDATE dbo.PRODUCTO SET stock_actual = stock_actual - 1 WHERE cod_producto = 101;`
 
 | filas_antes | filas_despues |
 | :--- | :--- |
-| `4` | `4` |
+| `1` | `1` |
 
 La cantidad de registros de auditoría no cambió: el trigger descartó la modificación porque el precio no varió.
 
-### 3.5. Alta y baja de un producto
+### 3.4. Alta y baja de un producto
 
 | auditoria_id | tipo_operacion | cod_producto | descripcion | precio_anterior | precio_nuevo |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `5` | INSERT | `1000` | Producto temporal de auditoria | `NULL` | `100.00` |
-| `6` | DELETE | `1000` | Producto temporal de auditoria | `100.00` | `NULL` |
+| `2` | INSERT | `1000` | Producto temporal de auditoria | `NULL` | `100.00` |
+| `3` | DELETE | `1000` | Producto temporal de auditoria | `100.00` | `NULL` |
 
 El historial del producto eliminado sigue disponible porque `AUDITORIA_PRODUCTO` no tiene clave foránea hacia `PRODUCTO`. El código `1000` lo asigna `IDENTITY`; puede variar según el estado de la base.
 
-### 3.7. Trazabilidad completa del producto 102
-Después de restaurar los precios originales (la restauración también quedó auditada), se consulta la historia del producto 102:
+### 3.6. Trazabilidad del producto 102
+Después de volver al precio original (ese cambio también quedó auditado), se consulta la historia del producto 102:
 
 | fecha_hora | usuario | tipo_operacion | precio_anterior | precio_nuevo |
 | :--- | :--- | :--- | :--- | :--- |
-| `2026-10-29 17:50:06.897` | `GIULI-PC\Giuli` | UPDATE | `18500.00` | `20000.00` |
-| `2026-10-29 17:50:06.947` | `GIULI-PC\Giuli` | UPDATE | `20000.00` | `22000.00` |
-| `2026-10-29 17:50:07.023` | `GIULI-PC\Giuli` | UPDATE | `22000.00` | `18500.00` |
+| `2026-10-29 19:16:40.470` | `GIULI-PC\Giuli` | UPDATE | `18500.00` | `20000.00` |
+| `2026-10-29 19:16:40.513` | `GIULI-PC\Giuli` | UPDATE | `20000.00` | `18500.00` |
 
-Se verifica que el trigger responde a las tres operaciones, audita varias filas en una sola sentencia, ignora los cambios que no son de precio y deja el catálogo en su estado original una vez restaurado. La trazabilidad permite reconstruir quién, cuándo y desde qué valor se modificó cada precio.
+Se verifica que el trigger registra los cambios de precio, las altas y las bajas, ignora las modificaciones que no son de precio (como el stock) y permite reconstruir quién, cuándo y desde qué valor se modificó cada precio.
