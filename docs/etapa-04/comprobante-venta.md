@@ -14,7 +14,7 @@ El vendedor requiere emitir el comprobante de una venta para entregar al cliente
 
 ```sql
 -- Parámetro de entrada: Número de venta a consultar
-DECLARE @nro_venta INT = 1;
+DECLARE @nro_venta INT = 2001;
 
 SELECT
     -- Encabezado de Venta y datos del Cliente
@@ -54,3 +54,14 @@ INNER JOIN PRODUCTO AS P  ON CO.cod_producto = P.cod_producto
 WHERE V.nro_venta = @nro_venta
 ORDER BY [Renglón];
 ```
+## Resultado verificado en SSMS
+
+Se probó con la venta **2001** (15/10/2026, Ana Gomez, DNI 40111222, canal Online, pago por transferencia):
+
+| Producto | Cantidad | Precio unitario | Subtotal |
+|---|---:|---:|---:|
+| Funda protectora universal | 2 | $8.500 | $17.000 |
+| Vidrio templado | 2 | $5.000 | $10.000 |
+| **Total** | **4** | | **$27.000** |
+
+La consulta de verificación mostró los siguientes importes: venta 2001 = $27.000; venta 2002 = $60.500; venta 2003 = $18.500. Los valores son datos ficticios de prueba.
