@@ -1,3 +1,6 @@
+USE NexusMobile;
+GO
+
 /* ============================================================
    CONSULTA 1: Factura / Comprobante de venta
    Motor: T-SQL (SQL Server)
@@ -11,7 +14,7 @@
    ============================================================ */
 
 -- Parámetro de entrada: Número de venta a consultar
-DECLARE @nro_venta INT = 1;
+DECLARE @nro_venta INT = 2001;
 
 SELECT 
     -- Encabezado de Venta y datos del Cliente
@@ -58,7 +61,7 @@ GO
 /* ============================================================
    CONSULTA DE VERIFICACIÓN (opcional)
    Valida que los renglones y el total general coincidan con la
-   tabla de datos de prueba para las 8 ventas registradas.
+   tabla de datos de prueba para las ventas registradas.
    ============================================================ */
 SELECT 
     V.nro_venta,
