@@ -10,7 +10,7 @@ El área de marketing requiere identificar a los clientes que hayan comprado má
 
 ```sql
 -- Parámetros de entrada
-DECLARE @mes  INT = 9;
+DECLARE @mes  INT = 10;
 DECLARE @anio INT = 2026;
 
 -- Rango del período: [primer día del mes, primer día del mes siguiente)
@@ -32,7 +32,7 @@ GROUP BY
     C.nombre,
     C.apellido,
     C.telefono
-HAVING SUM(CO.cantidad * CO.precio_unitario) > 100000
+HAVING SUM(CO.cantidad * CO.precio_unitario) > 20000
 ORDER BY [Total Gastado en el Mes] DESC;
 ```
 
@@ -85,7 +85,7 @@ SELECT
     SUM(CO.cantidad * CO.precio_unitario) AS [Importe de la venta]
 FROM VENTA AS V
 INNER JOIN CONTIENE AS CO ON CO.nro_venta = V.nro_venta
-WHERE V.dni_cliente = 40123456
+WHERE V.dni_cliente = 42123456
   AND V.fecha_hora >= @desde_v
   AND V.fecha_hora <  @hasta_v
 GROUP BY V.nro_venta, V.fecha_hora
