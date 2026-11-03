@@ -53,7 +53,7 @@ El repositorio se encuentra estructurado en carpetas modulares que separan la do
 │   │   ├── modelo-relacional.md        # Esquema de tablas, PK y FK
 │   │   ├── normalizacion.md            # Análisis riguroso (1FN, 2FN, 3FN y 4FN)
 │   │   └── der/
-│   │       └── der.png                 # Diagrama Entidad-Relación formal
+│   │       └── DER-Nexus.png                # Diagrama Entidad-Relación formal
 │   ├── etapa-03/                       # Definición física e integridad
 │   │   ├── implementacion.md           # Estructura del DDL físico
 │   │   ├── pruebas-validacion.md       # Casos de prueba de carga de datos
@@ -101,7 +101,7 @@ El diseño físico está normalizado en **Tercera y Cuarta Forma Normal**, compu
 * **Servicio Técnico:** `EQUIPO (id_equipo, nombre, descripcion, dni_cliente)` y `SERVICIO_TECNICO (nro_orden, falla_reportada, precio_arreglo, fecha_ingreso, fecha_entrega, id_equipo)`.
 * **Ventas y Envíos:** `ENVIO (cod_seguimiento, id_envio, direccion_origen, direccion_envio, estado_envio)`, `VENTA (nro_venta, fecha_hora, metodo_pago, canal_venta, dni_cliente, cod_seguimiento)` y la relación de detalle `CONTIENE (nro_venta, cod_producto, cantidad, precio_unitario)`.
 
-El diagrama de esquema relacional completo se encuentra en [`docs/etapa-02/der/der.png`](docs/etapa-02/der/der.png).
+El diagrama de esquema relacional completo se encuentra en [`docs/etapa-02/der/der.png`](docs/etapa-02/der/DER-Nexus.png).
 
 ---
 
